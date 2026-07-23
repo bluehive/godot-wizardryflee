@@ -54,12 +54,13 @@ description = "Headless import"
 run = "godot --headless --path \"$GODOT_PROJECT\" --import"
 
 [tasks.check]
-description = "Smoke check"
+description = "Smoke check (after import)"
+depends = ["import"]
 run = "godot --headless --path \"$GODOT_PROJECT\" -s res://tools/smoke_check.gd"
 
 [tasks."export:linux"]
 description = "Linux release export"
-depends = ["templates:install"]
+depends = ["templates:install", "check"]
 shell = "bash -c"
 run = '''
 set -euo pipefail
@@ -71,8 +72,8 @@ ls -la "$EXPORT_OUT"*
 '''
 
 [tasks.build]
-description = "import → check → export:linux"
-depends = ["import", "check", "export:linux"]
+description = "import → check → export:linux (ordered via depends)"
+depends = ["export:linux"]
 
 [tasks.run]
 description = "Run project (no Editor)"
