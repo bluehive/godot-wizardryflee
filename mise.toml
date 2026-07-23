@@ -1,0 +1,96 @@
+# Standalone Godot project tasks — https://mise.en.dev/tasks/
+#
+#   mise trust && mise install
+#   mise run templates:install
+#   mise run build
+#   mise run play
+
+[alias]
+godot = "asdf:mkungla/asdf-godot"
+
+[tools]
+godot = "4.7.1-stable"
+
+[env]
+GODOT_PROJECT = "{{config_root}}"
+GODOT_VERSION = "4.7.1"
+EXPORT_PRESET = "Linux"
+EXPORT_OUT = "{{config_root}}/Builds/linux/WizardryFlee.x86_64"
+GODOT_TOOLS_CACHE = "{{config_root}}/.cache"
+
+[tasks."godot:version"]
+description = "Show Godot version"
+run = "godot --version"
+
+[tasks."templates:install"]
+description = "Install export templates (idempotent)"
+shell = "bash -c"
+run = '''
+set -euo pipefail
+VER="${GODOT_VERSION}"
+DEST="${HOME}/.local/share/godot/export_templates/${VER}.stable"
+if [ -d "$DEST" ] && compgen -G "$DEST/linux*" > /dev/null; then
+  echo "templates already present: $DEST"
+  exit 0
+fi
+CACHE="${GODOT_TOOLS_CACHE}"
+mkdir -p "$CACHE" "$(dirname "$DEST")"
+TPZ="$CACHE/Godot_v${VER}-stable_export_templates.tpz"
+URL="https://github.com/godotengine/godot/releases/download/${VER}-stable/Godot_v${VER}-stable_export_templates.tpz"
+if [ ! -f "$TPZ" ]; then
+  curl -fL --retry 3 -o "$TPZ.partial" "$URL"
+  mv "$TPZ.partial" "$TPZ"
+fi
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+unzip -q "$TPZ" -d "$tmp"
+rm -rf "$DEST"
+mv "$tmp/templates" "$DEST"
+echo "installed templates → $DEST"
+'''
+
+[tasks.import]
+description = "Headless import"
+run = "godot --headless --path \"$GODOT_PROJECT\" --import"
+
+[tasks.check]
+description = "Smoke check"
+run = "godot --headless --path \"$GODOT_PROJECT\" -s res://tools/smoke_check.gd"
+
+[tasks."export:linux"]
+description = "Linux release export"
+depends = ["templates:install"]
+shell = "bash -c"
+run = '''
+set -euo pipefail
+mkdir -p "$(dirname "$EXPORT_OUT")"
+godot --headless --path "$GODOT_PROJECT" \
+  --export-release "$EXPORT_PRESET" "$EXPORT_OUT"
+chmod +x "$EXPORT_OUT" || true
+ls -la "$EXPORT_OUT"*
+'''
+
+[tasks.build]
+description = "import → check → export:linux"
+depends = ["import", "check", "export:linux"]
+
+[tasks.run]
+description = "Run project (no Editor)"
+run = "godot --path \"$GODOT_PROJECT\""
+
+[tasks.play]
+description = "Launch exported binary"
+shell = "bash -c"
+run = '''
+set -euo pipefail
+if [ ! -f "$EXPORT_OUT" ]; then
+  echo "missing $EXPORT_OUT — run: mise run build"
+  exit 1
+fi
+chmod +x "$EXPORT_OUT" || true
+exec "$EXPORT_OUT"
+'''
+
+[tasks.editor]
+description = "Open Godot Editor"
+run = "godot -e --path \"$GODOT_PROJECT\""

@@ -1,0 +1,30 @@
+# Godot 4
+.godot/
+.import/
+export.cfg
+export_presets.cfg.bak
+
+# Builds / binaries
+Builds/
+*.x86_64
+*.exe
+*.app
+*.apk
+*.pck
+*.zip
+*.tpz
+
+# OS / editor
+.DS_Store
+*~
+*.swp
+*.swo
+.vscode/
+.idea/
+*.tmp
+*.log
+
+# Local env
+.env
+.env.*
+.cache/

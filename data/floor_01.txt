@@ -1,0 +1,13 @@
+# WizardryFlee floor 01
+# # wall  . floor  S start  G goal  E encounter (fixed)
+# Player faces North (+ row decreases = -Z in world) after load.
+###########
+#.........#
+#.###.###.#
+#.#.....#.#
+#.#.##E.#.#
+#S#.....#G#
+#.#.E...#.#
+#.#.#####.#
+#.........#
+###########
